@@ -14,10 +14,6 @@ let g:loaded_insertComments = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! insertComments#Test()
-    call append(0, "isTest")
-endfunction
-
 function! GetAuthor()
     let authorName = substitute(system("whoami"), "\n", "", "g")
     return 'Author: ' . authorName
@@ -70,32 +66,36 @@ function! AppendJSComments()
     let comments = []
     call add(comments, GetAuthor())
     call add(comments, GetCreatedAt())
-    call add(comments, "\n")
+    call add(comments, "")
 
-    let classInfo      = []
-    let hasES6Class    = 0
+    let classInfo   = []
+    let hasES6Class = 0
 
-    for line in readfile(expand("%"))
-        if !IsComment(line)
-            if IsES6Class(line)
-                let obj  = {'name': ExtractClassName(line)}
-                call add(classInfo, obj)
+    try
+        for line in readfile(expand("%"))
+            if !IsComment(line)
+                if IsES6Class(line)
+                    let obj  = {'name': ExtractClassName(line)}
+                    call add(classInfo, obj)
 
-                let hasES6Class = 1
-            endif
+                    let hasES6Class = 1
+                endif
 
-            if hasES6Class
-                if(IsConstructor(line))
-                    let constructorArgs = GetArgs(line)
-                    if len(constructorArgs)
-                        let classInfo[-1].constructor = constructorArgs
+                if hasES6Class
+                    if(IsConstructor(line))
+                        let constructorArgs = GetArgs(line)
+                        if len(constructorArgs)
+                            let classInfo[-1].constructor = constructorArgs
+                        endif
+
+                        let hasES6Class = 0
                     endif
-
-                    let hasES6Class = 0
                 endif
             endif
-        endif
-    endfor
+        endfor
+    catch
+        echo "Failed to read. Please do it after saving!"
+    endtry
 
     for aClassInfo in classInfo
 
@@ -112,7 +112,7 @@ function! AppendJSComments()
             endfor
         endif
         
-        call add(commentsAboutClass, "\n")
+        call add(commentsAboutClass, "")
         for comment in Indent(commentsAboutClass)
             call add(comments, comment)
         endfor 
@@ -122,7 +122,7 @@ function! AppendJSComments()
 
     call insert(indentedComments, '/**', 0)
     call add(indentedComments, '*/')
-    call add(indentedComments, "\n")
+    call add(indentedComments, "")
     
     return indentedComments
 endfunction
