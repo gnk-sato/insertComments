@@ -1,10 +1,5 @@
 ## insertComments.vim
 
-
-## installation
-```vim
-```
-
 ## Abstract
 Insert comments into a javascript file.  
 Javascript file : '*.js' or '*.jsx'
