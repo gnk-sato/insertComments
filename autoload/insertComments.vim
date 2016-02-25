@@ -29,7 +29,18 @@ function! GetArgs(sentence)
     let start   = stridx(mysentence, "(")
     let stop    = stridx(mysentence, ")")
     let argsStr = mysentence[start+1 : stop-1]
-    return split(argsStr, ',')
+
+    let myargs = []
+    for myarg in split(argsStr, ',')
+        if stridx(myarg, '=') != -1
+            let keyValue = split(myarg, '=')
+            call add(myargs, {'key': keyValue[0], 'value': keyValue[1]})
+        else
+            call add(myargs, {'key': myarg})
+        endif
+    endfor
+
+    return myargs
 endfunction
 
 function! IsJavascript(filename)
@@ -38,7 +49,7 @@ function! IsJavascript(filename)
 endfunction
 
 function! IsES6Class(sentence)
-    return stridx(a:sentence, " class ") != -1
+    return stridx(a:sentence, " class ") != -1 || stridx(a:sentence, "class ") == 0
 endfunction
 
 function! IsComment(sentence)
@@ -53,6 +64,7 @@ endfunction
 
 function! ExtractClassName(sentence)
     let mysentence = substitute(a:sentence, '\( \)\+', ' ', 'g')
+    let mysentence = substitute(mysentence, '{', '', '')
     let terms = split(mysentence, ' ')
     let index = index(terms, 'class')
     return terms[index+1]
@@ -94,7 +106,7 @@ function! AppendJSComments()
             endif
         endfor
     catch
-        echo "Failed to read. Please do it after saving!"
+        echo "Failed to read. Please try again after saving!"
     endtry
 
     for aClassInfo in classInfo
@@ -108,7 +120,19 @@ function! AppendJSComments()
             call add(commentsAboutClass, "Constructor: ")
             
             for constructorArg in aClassInfo.constructor
-                call add(commentsAboutClass, "  " . constructorArg . ":")
+
+                let sentences = []
+                for keyValue in items(constructorArg)
+                    if keyValue[0] == 'key'
+                        call add(sentences, keyValue[1] . ":")
+                    elseif keyValue[0] == 'value'
+                        call add(sentences, "  default: " . keyValue[1])
+                    endif
+                endfor
+
+                for sentence in Indent(sentences)
+                    call add(commentsAboutClass, sentence)
+                endfor
             endfor
         endif
         
